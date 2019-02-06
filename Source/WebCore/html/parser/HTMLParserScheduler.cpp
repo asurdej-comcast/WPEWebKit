@@ -41,7 +41,7 @@ namespace WebCore {
 static Seconds parserTimeLimit(Page* page)
 {
     // Always yield after exceeding this.
-    constexpr auto defaultParserTimeLimit = 500_ms;
+    constexpr auto defaultParserTimeLimit = 5_s;
 
     // We're using the poorly named customHTMLTokenizerTimeDelay setting.
     if (page && page->hasCustomHTMLTokenizerTimeDelay())
