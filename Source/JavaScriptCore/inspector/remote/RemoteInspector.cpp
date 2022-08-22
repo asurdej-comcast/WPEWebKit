@@ -34,6 +34,11 @@
 #include "RemoteInspectorConstants.h"
 #include <wtf/MainThread.h>
 #include <wtf/text/WTFString.h>
+#include <wtf/text/StringBuilder.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <ifaddrs.h>
 
 namespace Inspector {
 
@@ -259,6 +264,96 @@ void RemoteInspector::updateHasActiveDebugSession()
 
     // FIXME: Expose some way to access this state in an embedder.
     // Legacy iOS WebKit 1 had a notification. This will need to be smarter with WebKit2.
+}
+
+bool RemoteInspector::shouldInhibitLocalHostInspection(TargetID targetId)
+{
+    auto target = m_targetMap.get(targetId);
+    if (!target)
+        return true;
+
+    // Automation is not subject to local host inspection inhibition
+    // since it's controlled externally.
+    if (is<RemoteAutomationTarget>(target))
+        return false;
+
+    RemoteInspectionTarget *remoteInspectionTarget = dynamicDowncast<RemoteInspectionTarget>(target);
+    if (!remoteInspectionTarget)
+        return true;
+
+    // /etc/device.properties is not exposed inside Dobby container
+    // so localhost filtering is disabled inside the Dobby container
+    static auto isProductionBuild = []() -> bool {
+        FILE* properties = fopen("/etc/device.properties", "r");
+        if (properties) {
+            bool prodBuild = false;
+            char* buffer = nullptr;
+            size_t size = 0;
+
+            while (getline(&buffer, &size, properties) != -1) {
+                const char* prefix = "build_type=";
+                size_t prefix_len = strlen(prefix);
+                if (g_ascii_strncasecmp(prefix, buffer, prefix_len) == 0) {
+                    char* remainder = buffer + prefix_len;
+                    prodBuild = g_ascii_strncasecmp("prod", remainder, 4) == 0;
+                    break;
+                }
+            }
+
+            free(buffer);
+            fclose(properties);
+            return prodBuild;
+        }
+        return false;
+    };
+
+    // allow inspection of localhost pages on dev builds
+    static bool productionBuildFlag = isProductionBuild();
+    if (!productionBuildFlag)
+        return false;
+
+    // find the localhost page
+    if(remoteInspectionTarget->url().find("localhost:"_s) != notFound)
+        return true;
+
+    if(remoteInspectionTarget->url().find("file://"_s) != notFound)
+        return true;
+
+    //getting device's ip addresses
+    struct ifaddrs *ifaddr;
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        return true;
+    }
+
+    int  status, family = 0;
+    char host[NI_MAXHOST];
+    for (struct ifaddrs *addr = ifaddr; addr != NULL; addr = addr->ifa_next) {
+        if (!addr->ifa_addr)
+            continue;
+
+        family = addr->ifa_addr->sa_family;
+        if (family == AF_INET || family == AF_INET6) {
+            memset(host, 0, sizeof(host));
+            status = getnameinfo(addr->ifa_addr,
+                    (family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
+                    host, NI_MAXHOST,
+                    NULL, 0, NI_NUMERICHOST);
+
+            if (status != 0) {
+                freeifaddrs(ifaddr);
+                return true;
+            }
+
+            if (remoteInspectionTarget->url().find(String::fromUTF8(host)) != notFound) {
+                freeifaddrs(ifaddr);
+                return true;
+            }
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    return false;
 }
 
 RemoteInspector::Client::Client() = default;

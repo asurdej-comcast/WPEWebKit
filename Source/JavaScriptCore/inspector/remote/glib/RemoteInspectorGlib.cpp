@@ -195,8 +195,14 @@ void RemoteInspector::pushListingsNow()
     GVariantBuilder builder;
     g_variant_builder_init(&builder, G_VARIANT_TYPE("(a(tsssb)b)"));
     g_variant_builder_open(&builder, G_VARIANT_TYPE("a(tsssb)"));
-    for (auto listing : m_targetListingMap.values())
+
+    for (auto target : m_targetListingMap.keys()) {
+        if(shouldInhibitLocalHostInspection(target))
+            continue;
+        TargetListing listing = m_targetListingMap.get(target);
         g_variant_builder_add_value(&builder, listing.get());
+    }
+
     g_variant_builder_close(&builder);
     g_variant_builder_add(&builder, "b", m_clientCapabilities && m_clientCapabilities->remoteAutomationAllowed);
     m_socketConnection->sendMessage("SetTargetList", g_variant_builder_end(&builder));
@@ -256,7 +262,11 @@ void RemoteInspector::receivedDataMessage(TargetID targetIdentifier, const char*
         if (!connectionToTarget)
             return;
     }
-    connectionToTarget->sendMessageToTarget(String::fromUTF8(message));
+
+    if(shouldInhibitLocalHostInspection(targetIdentifier))
+        connectionToTarget->close();
+    else
+        connectionToTarget->sendMessageToTarget(String::fromUTF8(message));
 }
 
 void RemoteInspector::receivedCloseMessage(TargetID targetIdentifier)
@@ -286,6 +296,9 @@ void RemoteInspector::setup(TargetID targetIdentifier)
             return;
     }
 
+    if(shouldInhibitLocalHostInspection(targetIdentifier))
+        return;
+
     auto connectionToTarget = adoptRef(*new RemoteConnectionToTarget(*target));
     ASSERT(is<RemoteInspectionTarget>(target) || is<RemoteAutomationTarget>(target));
     if (!connectionToTarget->setup()) {
@@ -301,8 +314,12 @@ void RemoteInspector::setup(TargetID targetIdentifier)
 
 void RemoteInspector::sendMessageToTarget(TargetID targetIdentifier, const char* message)
 {
-    if (RefPtr connectionToTarget = m_targetConnectionMap.get(targetIdentifier))
-        connectionToTarget->sendMessageToTarget(String::fromUTF8(message));
+    if (RefPtr connectionToTarget = m_targetConnectionMap.get(targetIdentifier)) {
+        if(shouldInhibitLocalHostInspection(targetIdentifier))
+            connectionToTarget->close();
+        else
+            connectionToTarget->sendMessageToTarget(String::fromUTF8(message));
+    }
 }
 
 void RemoteInspector::requestAutomationSession(const char* sessionID, const Client::SessionCapabilities& capabilities)
