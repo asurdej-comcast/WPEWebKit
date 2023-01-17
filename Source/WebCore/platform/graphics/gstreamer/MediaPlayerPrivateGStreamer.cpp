@@ -500,8 +500,23 @@ bool MediaPlayerPrivateGStreamer::paused() const
     }
 
     GstState state;
-    gst_element_get_state(m_pipeline.get(), &state, nullptr, 0);
+    GstStateChangeReturn getStateResult = gst_element_get_state(m_pipeline.get(), &state, nullptr, 0);
     bool paused = state <= GST_STATE_PAUSED;
+    if (getStateResult == GST_STATE_CHANGE_ASYNC) {
+        GST_OBJECT_LOCK(pipeline());
+        if (GST_STATE_RETURN(pipeline()) == GST_STATE_CHANGE_ASYNC &&
+            (GST_STATE(pipeline()) > GST_STATE_PAUSED ||
+             GST_STATE_PENDING(pipeline()) > GST_STATE_PAUSED ||
+             GST_STATE_TARGET(pipeline()) > GST_STATE_PAUSED))
+        {
+            GST_LOG_OBJECT(pipeline(), "Async state current: %s, pending: %s, target: %s -> Assume player not paused",
+                           gst_element_state_get_name(GST_STATE(pipeline())),
+                           gst_element_state_get_name(GST_STATE_PENDING(pipeline())),
+                           gst_element_state_get_name(GST_STATE_TARGET(pipeline())));
+            paused = false;
+        }
+        GST_OBJECT_UNLOCK(pipeline());
+    }
     GST_LOG_OBJECT(pipeline(), "Paused: %s", toString(paused).utf8().data());
     return paused;
 }
@@ -987,8 +1002,8 @@ bool MediaPlayerPrivateGStreamer::changePipelineState(GstState newState)
 
     GstState currentState, pending;
 
-    gst_element_get_state(m_pipeline.get(), &currentState, &pending, 0);
-    if (currentState == newState || pending == newState) {
+    GstStateChangeReturn getStateResult = gst_element_get_state(m_pipeline.get(), &currentState, &pending, 0);
+    if ((currentState == newState || pending == newState) && getStateResult != GST_STATE_CHANGE_ASYNC) {
         GST_DEBUG_OBJECT(pipeline(), "Rejected state change to %s from %s with %s pending", gst_element_state_get_name(newState),
             gst_element_state_get_name(currentState), gst_element_state_get_name(pending));
         return true;
