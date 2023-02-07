@@ -254,7 +254,12 @@ void WebLoaderStrategy::scheduleLoad(ResourceLoader& resourceLoader, CachedResou
     }
 
     WEBLOADERSTRATEGY_RELEASE_LOG("scheduleLoad: URL will be scheduled with the NetworkProcess");
-    scheduleLoadFromNetworkProcess(resourceLoader, resourceLoader.request(), trackingParameters, shouldClearReferrerOnHTTPSToHTTPRedirect, maximumBufferingTime(resource));
+    const Seconds bufferingTime = ([&]{
+        if (resource && resource->type() == CachedResource::Type::RawResource && resourceLoader.request().timeoutInterval() > 0)
+            return Seconds(std::min(0.25, resourceLoader.request().timeoutInterval() / 2.0));
+        return maximumBufferingTime(resource);
+    })();
+    scheduleLoadFromNetworkProcess(resourceLoader, resourceLoader.request(), trackingParameters, shouldClearReferrerOnHTTPSToHTTPRedirect, bufferingTime);
 }
 
 bool WebLoaderStrategy::tryLoadingUsingURLSchemeHandler(ResourceLoader& resourceLoader, const WebResourceLoader::TrackingParameters& trackingParameters)
