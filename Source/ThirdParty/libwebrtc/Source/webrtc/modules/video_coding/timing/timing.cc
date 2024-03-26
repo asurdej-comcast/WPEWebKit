@@ -195,7 +195,7 @@ void VCMTiming::SetLastDecodeScheduledTimestamp(
 
 Timestamp VCMTiming::RenderTimeInternal(uint32_t frame_timestamp,
                                         Timestamp now) const {
-  if (UseLowLatencyRendering()) {
+  if (false && UseLowLatencyRendering()) {
     // Render as soon as possible or with low-latency renderer algorithm.
     return Timestamp::Zero();
   }
