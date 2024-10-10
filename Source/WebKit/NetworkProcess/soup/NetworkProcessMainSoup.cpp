@@ -61,9 +61,12 @@ public:
     }
 };
 
+#include "ExitOverride.h"
 int NetworkProcessMain(int argc, char** argv)
 {
-    return AuxiliaryProcessMain<NetworkProcessMainSoup>(argc, argv);
+    QuickExitAfterScope _exit; // Skip running exit handlers after main func returns.
+    _exit.status = AuxiliaryProcessMain<NetworkProcessMainSoup>(argc, argv);
+    return _exit.status;
 }
 
 } // namespace WebKit

@@ -88,10 +88,12 @@ add_custom_command(
 
 list(APPEND WebProcess_SOURCES
     WebProcess/EntryPoint/unix/WebProcessMain.cpp
+    Shared/ExitOverride.cpp
 )
 
 list(APPEND NetworkProcess_SOURCES
     NetworkProcess/EntryPoint/unix/NetworkProcessMain.cpp
+    Shared/ExitOverride.cpp
 )
 
 list(APPEND GPUProcess_SOURCES

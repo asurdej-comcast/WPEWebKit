@@ -93,9 +93,12 @@ public:
     }
 };
 
+#include "ExitOverride.h"
 int WebProcessMain(int argc, char** argv)
 {
-    return AuxiliaryProcessMain<WebProcessMainWPE>(argc, argv);
+    QuickExitAfterScope _exit; // Skip running exit handlers after main func returns.
+    _exit.status = AuxiliaryProcessMain<WebProcessMainWPE>(argc, argv);
+    return _exit.status;
 }
 
 } // namespace WebKit
