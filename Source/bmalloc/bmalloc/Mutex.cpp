@@ -43,7 +43,7 @@ static inline void yield()
     constexpr mach_msg_timeout_t timeoutInMS = 1;
     thread_switch(MACH_PORT_NULL, SWITCH_OPTION_DEPRESS, timeoutInMS);
 #else
-    static size_t bmallocMicrosecondsSleep;
+    static size_t bmallocMicrosecondsSleep = 150;
     static std::once_flag onceFlag;
     std::call_once(onceFlag, [] {
         const char* env = getenv("WEBKIT_WPE_BMALLOC_MICROSECONDS_SLEEP");
