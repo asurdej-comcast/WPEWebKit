@@ -171,7 +171,7 @@ bool CDMPrivateThunder::supportsConfiguration(const CDMKeySystemConfiguration& c
 
 Vector<AtomString> CDMPrivateThunder::supportedRobustnesses() const
 {
-    static const Vector<AtomString> defaultRobustnesses { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s };
+    static const Vector<AtomString> defaultRobustnesses { emptyAtom(), "SW_SECURE_DECODE"_s, "SW_SECURE_CRYPTO"_s, "HW_SECURE_DECODE"_s, "HW_SECURE_CRYPTO"_s, "HW_SECURE_ALL"_s };
 
 #if THUNDER_HAS_OCDM_SUPPORTED_ROBUSTNESS
     if (!m_thunderSystem) {
