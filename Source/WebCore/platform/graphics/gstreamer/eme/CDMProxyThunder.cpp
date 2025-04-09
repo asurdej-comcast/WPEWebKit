@@ -90,8 +90,7 @@ bool CDMProxyThunder::decrypt(CDMProxyThunder::DecryptionContext& input)
 
     GST_TRACE("decrypting");
     // Decrypt cipher.
-    OpenCDMError errorCode = opencdm_gstreamer_session_decrypt(session->get(), input.dataBuffer, input.subsamplesBuffer, input.numSubsamples,
-        input.ivBuffer, input.keyIDBuffer, 0);
+    OpenCDMError errorCode = opencdm_gstreamer_session_decrypt_buffer(session->get(), input.dataBuffer, input.caps.get());
     if (errorCode) {
         GST_ERROR("decryption failed, error code %X", errorCode);
         return false;
