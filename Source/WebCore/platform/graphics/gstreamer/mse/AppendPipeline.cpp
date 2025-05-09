@@ -897,6 +897,12 @@ GRefPtr<GstElement> createOptionalParserForFormat([[maybe_unused]] GstBin* bin, 
         elementClass = "vp9parse";
     }
 
+#if ENABLE(THUNDER)
+    // Disable optional parser in AppendPipeline to support changing caps to encrypted ones
+    // that are not supported by parser (x-cenc)
+    elementClass = "identity";
+#endif
+
     GST_DEBUG_OBJECT(bin, "Creating %s parser for stream with caps %" GST_PTR_FORMAT, elementClass, caps);
     GRefPtr<GstElement> result(makeGStreamerElement(elementClass, parserName.ascii().data()));
     if (!result && g_strcmp0(elementClass, "identity")) {
