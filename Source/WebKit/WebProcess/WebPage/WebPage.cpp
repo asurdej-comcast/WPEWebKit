@@ -468,6 +468,10 @@
 #include <WebCore/ScreenProperties.h>
 #endif // PLATFORM(WPE) && !ENABLE(WPE_PLATFORM)
 
+namespace WebCore {
+void ForceStopMediaElements();  // defined in HTMLMediaElement
+}
+
 namespace WebKit {
 using namespace JSC;
 using namespace WebCore;
@@ -2108,6 +2112,12 @@ void WebPage::loadRequest(LoadParameters&& loadParameters)
 
     if (auto onwerPermissionsPolicy = std::exchange(loadParameters.ownerPermissionsPolicy, { }))
         localFrame->setOwnerPermissionsPolicy(WTFMove(*onwerPermissionsPolicy));
+
+    // If the URL is empty, we are loading an empty document, so we should stop any media elements that might be playing.
+    if (frameLoadRequest.resourceRequest().url().isEmpty() ||
+        LegacySchemeRegistry::shouldLoadURLSchemeAsEmptyDocument(frameLoadRequest.resourceRequest().url().protocol().toStringWithoutCopying())) {
+        ForceStopMediaElements();
+    }
 
     localFrame->loader().setHTTPFallbackInProgress(loadParameters.isPerformingHTTPFallback);
 

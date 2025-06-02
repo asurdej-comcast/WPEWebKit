@@ -249,6 +249,15 @@ static constexpr auto mediaSourceBlobProtocol = "blob"_s;
 
 using namespace HTMLNames;
 
+void ForceStopMediaElements()
+{
+    for (auto mediaElement : HTMLMediaElement::allMediaElements()) {
+        WTFLogAlways("Force stop '%s'", mediaElement->currentSrc().string().utf8().data());
+        ActiveDOMObject* obj = mediaElement.ptr();
+        obj->stop();
+    }
+}
+
 String convertEnumerationToString(HTMLMediaElement::ReadyState enumerationValue)
 {
     static const NeverDestroyed<String> values[] = {
