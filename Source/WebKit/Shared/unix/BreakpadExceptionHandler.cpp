@@ -56,6 +56,8 @@ void installBreakpadExceptionHandler()
     }
 
     static String breakpadMinidumpDir = String::fromUTF8(getenv("BREAKPAD_MINIDUMP_DIR"));
+    if (breakpadMinidumpDir.isEmpty() && FileSystem::fileExists("/tmp/.SecureDumpEnable"_s))
+        breakpadMinidumpDir = "/opt/secure/minidumps"_s;
 
 #ifdef BREAKPAD_MINIDUMP_DIR
     if (breakpadMinidumpDir.isEmpty())
