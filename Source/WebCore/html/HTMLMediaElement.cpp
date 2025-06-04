@@ -8120,7 +8120,7 @@ static inline bool isRemoteMediaStreamVideoTrack(const Ref<MediaStreamTrack>& it
 
 HTMLMediaElement::SleepType HTMLMediaElement::shouldDisableSleep() const
 {
-#if !PLATFORM(COCOA) && !PLATFORM(GTK) && !PLATFORM(WPE)
+#if !PLATFORM(COCOA) && !PLATFORM(GTK)
     return SleepType::None;
 #endif
     if (m_sentEndEvent || !m_player || !m_player->timeIsProgressing() || loop())
