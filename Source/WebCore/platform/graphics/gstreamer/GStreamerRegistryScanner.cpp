@@ -654,6 +654,7 @@ void GStreamerRegistryScanner::initializeDecoders(const GStreamerRegistryScanner
         { ElementFactories::Type::VideoDecoder, "video/x-flash-video"_s, { "video/flv"_s, "video/x-flv"_s }, { } },
         { ElementFactories::Type::VideoDecoder, "video/x-h263"_s, { }, { } },
         { ElementFactories::Type::VideoDecoder, "video/x-msvideocodec"_s, { "video/x-msvideo"_s }, { } },
+        { ElementFactories::Type::VideoDecoder, "video/x-ext-dvb"_s, { "video/x-dvb"_s }, { } },
         { ElementFactories::Type::Demuxer, "application/vnd.rn-realmedia"_s, { }, { } },
         { ElementFactories::Type::Demuxer, "application/x-3gp"_s, { }, { } },
         { ElementFactories::Type::Demuxer, "application/x-pn-realaudio"_s, { }, { } },
