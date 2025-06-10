@@ -4100,7 +4100,8 @@ ExceptionOr<void> HTMLMediaElement::setCurrentTimeForBindings(double time)
         return Exception { ExceptionCode::InvalidStateError };
 
     if (m_readyState == HAVE_NOTHING || !m_player) {
-        m_defaultPlaybackStartPosition = MediaTime::createWithDouble(time);
+        if (!document().quirks().shouldNotChangePlaybackPositionOnPlayerStartup())
+            m_defaultPlaybackStartPosition = MediaTime::createWithDouble(time);
         return { };
     }
 

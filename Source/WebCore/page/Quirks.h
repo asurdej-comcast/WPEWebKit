@@ -210,6 +210,7 @@ public:
 #if ENABLE(MEDIA_SOURCE)
     bool shouldBypassAudioFlushOnSampleReplacement() const;
 #endif
+    bool shouldNotChangePlaybackPositionOnPlayerStartup() const;
 
 private:
     bool needsQuirks() const;
@@ -290,6 +291,7 @@ private:
 #if ENABLE(MEDIA_SOURCE)
     mutable std::optional<bool> m_shouldBypassAudioFlushOnSampleReplacementQuirk;
 #endif
+    mutable std::optional<bool> m_shouldNotChangePlaybackPositionOnPlayerStartupQuirk;
 };
 
 } // namespace WebCore
