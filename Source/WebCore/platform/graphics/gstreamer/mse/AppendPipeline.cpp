@@ -377,7 +377,13 @@ void AppendPipeline::handleNeedContextSyncMessage(GstMessage* message)
     if (!parserPeerPad) [[unlikely]]
         return;
 
-    gstElementLockAndSetState(parser.get(), GST_STATE_NULL);
+    {
+        auto locker = GstStateLocker(m_pipeline.get());
+        gst_element_set_locked_state(parser.get(), TRUE);
+        gst_element_set_state(parser.get(), GST_STATE_NULL);
+        gst_element_set_locked_state(parser.get(), FALSE);
+    }
+
     gst_pad_unlink(pad, peer.get());
     gst_pad_unlink(srcPad.get(), parserPeerPad.get());
     gst_bin_remove(GST_BIN_CAST(m_pipeline.get()), parser.get());

@@ -2534,10 +2534,9 @@ void MediaPlayerPrivateGStreamer::configureParsebin(GstElement* parsebin)
             if (!isParsed || !*isParsed)
                 return tryAutoPlug;
 
+            auto mediaType = String::fromUTF8(gst_structure_get_name(structure));
             auto& scanner = GStreamerRegistryScanner::singleton();
-            GUniquePtr<char> gstCodecName(gst_codec_utils_caps_get_mime_codec(caps));
-            auto codecName = String::fromUTF8(gstCodecName.get());
-            auto result = scanner.isCodecSupported(GStreamerRegistryScanner::Configuration::Decoding, codecName);
+            auto result = scanner.isCodecSupported(GStreamerRegistryScanner::Configuration::Decoding, mediaType);
             if (!result.isSupported)
                 return tryAutoPlug;
 
@@ -2584,12 +2583,12 @@ void MediaPlayerPrivateGStreamer::configureElement(GstElement* element)
     if (webkitGstCheckVersion(1, 22, 0) && g_str_has_prefix(elementName.get(), "urisourcebin") && (isMediaSource() || isMediaStreamPlayer()))
         g_object_set(element, "use-buffering", FALSE, "parse-streams", !isMediaStreamPlayer(), nullptr);
 
-    if (nameView.startsWith("parsebin"_s))
+    if (g_str_has_prefix(elementName.get(), "parsebin"))
         configureParsebin(element);
 
     // The legacy decodebin2 stack doesn't integrate well with parsebin, so prevent auto-plugging of
     // the webkitthunderparser.
-    if (nameView.startsWith("uridecodebin"_s) && m_isLegacyPlaybin)
+    if (g_str_has_prefix(elementName.get(), "uridecodebin") && m_isLegacyPlaybin)
         configureUriDecodebin2(element);
 
     // In case of playbin3 with <video ... preload="auto">, instantiate
