@@ -193,6 +193,8 @@ public:
         ASSERT_NOT_REACHED();
         return ""_s;
     }
+
+    static bool cencHasInitDataForKeySystem(const InitData& initData, const String& keySystem);
 };
 
 } // namespace WebCore
