@@ -37,6 +37,7 @@ using namespace WebCore;
 struct WebKitMediaThunderDecryptPrivate {
     RefPtr<CDMProxyThunder> cdmProxy;
     GRefPtr<GstCaps> inputCaps;
+    bool didReportDecryptionStart;
 };
 
 static const char* protectionSystemId(WebKitMediaCommonEncryptionDecrypt*);
@@ -177,6 +178,14 @@ static bool decrypt(WebKitMediaCommonEncryptionDecrypt* decryptor, GstBuffer* iv
     context.subsamplesBuffer = subsampleCount ? subsamplesBuffer : nullptr;
     context.cdmProxyDecryptionClient = webKitMediaCommonEncryptionDecryptGetCDMProxyDecryptionClient(decryptor);
     bool result = priv->cdmProxy->decrypt(context, priv->inputCaps);
+
+    if (result && !priv->didReportDecryptionStart) {
+        priv->didReportDecryptionStart = true;
+        GUniquePtr<gchar> keySystem(g_strdup(priv->cdmProxy->keySystem().utf8().data()));
+        GstStructure *s = gst_structure_new("drm-decryption-started",
+                                            "key-system", G_TYPE_STRING, keySystem.get(), NULL);
+        gst_element_post_message(GST_ELEMENT(self), gst_message_new_element(GST_OBJECT(self), s));
+    }
 
     return result;
 }

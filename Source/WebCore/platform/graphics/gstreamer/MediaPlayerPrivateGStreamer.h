@@ -73,6 +73,7 @@ typedef struct _GstMpegtsSection GstMpegtsSection;
 
 #if ENABLE(ENCRYPTED_MEDIA)
 #include "CDMProxy.h"
+#include "MediaPlayerGStreamerEncryptedPlayTracker.h"
 #endif
 
 #if ENABLE(MEDIA_TELEMETRY)
@@ -686,6 +687,10 @@ private:
     bool m_pageIsVisible { false };
 
     bool m_pageIsSuspended { false };
+
+#if ENABLE(ENCRYPTED_MEDIA)
+    std::unique_ptr<MediaPlayerGStreamerEncryptedPlayTracker> m_tracker;
+#endif
 
     // playbin3 only:
     bool m_waitingForStreamsSelectedEvent { true };
