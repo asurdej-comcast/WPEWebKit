@@ -2201,6 +2201,13 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
                     }
                 }
             }
+#if ENABLE(ENCRYPTED_MEDIA)
+            if (g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_DECRYPT)) {
+                fprintf(stderr, "HTML5 video: Playback failed: Decryption error [%s]\n", m_url.string().utf8().data());
+                if (player)
+                    player->decryptErrorEncountered(); // override the error code
+            }
+#endif
         }
 
         auto& quirksManager = GStreamerQuirksManager::singleton();

@@ -3530,6 +3530,13 @@ void HTMLMediaElement::mediaPlayerWaitingForKeyChanged()
     // GStreamer handles this without suspending explicitly.
 }
 
+void HTMLMediaElement::mediaPlayerDecryptErrorEncountered()
+{
+    if (!m_error)
+        scheduleEvent(eventNames().errorEvent);
+    m_error = MediaError::create(MediaError::MEDIA_ERR_ENCRYPTED, m_player ? m_player->lastErrorMessage() : ""_s);
+}
+
 void HTMLMediaElement::attemptToDecrypt()
 {
     // https://w3c.github.io/encrypted-media/#attempt-to-decrypt

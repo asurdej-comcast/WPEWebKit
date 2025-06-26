@@ -1573,6 +1573,11 @@ bool MediaPlayer::waitingForKey() const
         return false;
     return m_private->waitingForKey();
 }
+
+void MediaPlayer::decryptErrorEncountered()
+{
+    client().mediaPlayerDecryptErrorEncountered();
+}
 #endif
 
 String MediaPlayer::referrer() const
