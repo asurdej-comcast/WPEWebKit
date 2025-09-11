@@ -180,7 +180,7 @@ struct Stream : public ThreadSafeRefCountedAndCanMakeThreadSafeWeakPtr<Stream> {
             : pendingInitialCaps(WTFMove(initialCaps))
         {
             gst_segment_init(&segment, GST_FORMAT_TIME);
-            segment.start = segment.time = startTime;
+            segment.position = segment.start = segment.time = startTime;
             segment.rate = rate;
             ASSERT(pendingInitialCaps);
         }
@@ -705,7 +705,7 @@ static void webKitMediaSrcStreamFlush(Stream* stream, bool isSeekingFlush)
         DataMutexLocker streamingMembers { stream->streamingMembersDataMutex };
         streamingMembers->segment.base = 0;
         streamingMembers->segment.rate = priv->rate;
-        streamingMembers->segment.start = streamingMembers->segment.time = priv->startTime;
+        streamingMembers->segment.position = streamingMembers->segment.start = streamingMembers->segment.time = priv->startTime;
     } else {
         // In the case of non-seeking flushes we don't reset the timeline, so instead we need to increase the `base` field
         // by however running time we're starting after the flush.
@@ -722,7 +722,7 @@ static void webKitMediaSrcStreamFlush(Stream* stream, bool isSeekingFlush)
                     GST_TIME_ARGS(pipelineStreamTime), streamTime.toString().ascii().data(), stream->source->priv->rate);
                 streamingMembers->segment.base = pipelineRunningTime;
                 streamingMembers->segment.rate = stream->source->priv->rate;
-                streamingMembers->segment.start = streamingMembers->segment.time = static_cast<GstClockTime>(pipelineStreamTime);
+                streamingMembers->segment.position = streamingMembers->segment.start = streamingMembers->segment.time = static_cast<GstClockTime>(pipelineStreamTime);
             }
         }
     }
