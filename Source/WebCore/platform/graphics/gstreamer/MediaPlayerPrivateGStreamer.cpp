@@ -2479,6 +2479,9 @@ void MediaPlayerPrivateGStreamer::updateBufferingStatus(GstBufferingMode mode, d
         m_fillTimer.startRepeating(200_ms);
     }
 
+    // Force buffering flag to be always false so we don't enter buffering state at all
+    m_isBuffering = false;
+
     m_bufferingPercentage = percentage;
 
     // resetHistory is used to forget about the past values and set them like the new ones. This is useful when resetting
@@ -3429,6 +3432,13 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin(const URL& url)
         gst_pipeline_use_clock(GST_PIPELINE(m_pipeline.get()), clock.get());
         gst_element_set_base_time(m_pipeline.get(), 0);
         gst_element_set_start_time(m_pipeline.get(), GST_CLOCK_TIME_NONE);
+    }
+
+    if (!isMediaSource() && !isMediaStream) { // for progressive playback only
+        // set fixed playbin buffer-size to disable uridecodebin estimations
+        // that could be platform dependent. Use default queue2 elem max size value
+        static constexpr gint kDefaultQueue2BufferSize = 2 * 1024 * 1024;   // Default queue2 size - 2 MB
+        g_object_set(G_OBJECT(pipeline()), "buffer-size", kDefaultQueue2BufferSize, nullptr);
     }
 
     setStreamVolumeElement(GST_STREAM_VOLUME(m_pipeline.get()));
