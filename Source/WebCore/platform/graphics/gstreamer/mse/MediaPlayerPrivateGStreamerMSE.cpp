@@ -254,6 +254,11 @@ void MediaPlayerPrivateGStreamerMSE::seekToTarget(const SeekTarget& target)
 
 bool MediaPlayerPrivateGStreamerMSE::doSeek(const SeekTarget& target, float rate)
 {
+    fprintf(stderr,"HTML5 video: Seeking from %s to %s seconds [%s]\n",
+            toString(currentTime()).utf8().data(),
+            toString(target.time).utf8().data(),
+            url().string().utf8().data());
+
     // This method should only be called outside of MediaPlayerPrivateGStreamerMSE by MediaPlayerPrivateGStreamer::setRate().
 
     // Note: An important difference between seek with WebKitMediaSrc and regular playback is that seeking before

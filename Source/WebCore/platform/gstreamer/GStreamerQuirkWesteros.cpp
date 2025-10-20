@@ -31,6 +31,25 @@ namespace WebCore {
 GST_DEBUG_CATEGORY_STATIC(webkit_westeros_quirks_debug);
 #define GST_CAT_DEFAULT webkit_westeros_quirks_debug
 
+MonotonicTime gEnterKeyDownTime;
+void noticeEnterKeyDownEvent()
+{
+    gEnterKeyDownTime = WTF::MonotonicTime::now();
+}
+static void noticeFirstVideoFrame()
+{
+    if (gEnterKeyDownTime) {
+        auto diffTime = WTF::MonotonicTime::now() - gEnterKeyDownTime;
+        gEnterKeyDownTime = MonotonicTime();
+        fprintf(stderr, "Media: browse-to-watch = %.2f ms\n", diffTime.milliseconds());
+    }
+
+}
+static void onFirstVideoFrameCallback(gpointer /*data*/)
+{
+    noticeFirstVideoFrame();
+}
+
 GStreamerQuirkWesteros::GStreamerQuirkWesteros()
 {
     GST_DEBUG_CATEGORY_INIT(webkit_westeros_quirks_debug, "webkitquirkswesteros", 0, "WebKit Westeros Quirks");
@@ -59,6 +78,11 @@ bool GStreamerQuirkWesteros::isPlatformSupported() const
 
 void GStreamerQuirkWesteros::configureElement(GstElement* element, const OptionSet<ElementRuntimeCharacteristics>& characteristics)
 {
+    if (!g_strcmp0(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstWesterosSink") &&
+        !g_signal_handler_find(element, static_cast<GSignalMatchType>(G_SIGNAL_MATCH_FUNC),
+                               0, 0, nullptr, reinterpret_cast<gpointer>(G_CALLBACK(onFirstVideoFrameCallback)), nullptr)) {
+        g_signal_connect_swapped(element, "first-video-frame-callback", G_CALLBACK(onFirstVideoFrameCallback), nullptr);
+    }
     // Decodebin3 will try to autoplug available elements until it reaches a raw video format.
     // Set stop caps on decodebin3 to prevent it from decoding the stream.
     // Instead, it should expose a pad with encoded caps that platform sink can handle directly as a sink element.

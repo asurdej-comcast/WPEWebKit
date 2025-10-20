@@ -226,6 +226,8 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
     ensureGStreamerInitialized();
     m_audioSink = createAudioSink();
     ensureSeekFlags();
+
+    fprintf(stderr, "HTML5 video: Player constructed [%p]\n", this);
 }
 
 MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
@@ -234,12 +236,17 @@ MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
         m_gstreamerHolePunchHost->playerPrivateWillBeDestroyed();
 
     tearDown(true);
+
+    fprintf(stderr, "HTML5 video: Player Destroyed [%p]\n", this);
 }
 
 void MediaPlayerPrivateGStreamer::tearDown(bool clearMediaPlayer)
 {
     GST_DEBUG_OBJECT(pipeline(), "Disposing player");
     m_isPlayerShuttingDown.store(true);
+
+    if (m_reportedPlaybackStarted && !(m_reportedPlaybackEOS || m_reportedPlaybackFailed))
+        fprintf(stderr, "HTML5 video: Playback terminated [%s]\n", m_url.string().utf8().data());
 
 #if ENABLE(MEDIA_TELEMETRY)
     MediaTelemetryReport::singleton().reportPlaybackState(MediaTelemetryReport::AVPipelineState::Stop);
@@ -389,6 +396,11 @@ void MediaPlayerPrivateGStreamer::load(const String& urlString)
     }
 
     registerWebKitGStreamerElements();
+
+    fprintf(stderr, "HTML5 video: Loading [%s]\n", urlString.utf8().data());
+    m_reportedPlaybackStarted = false; // Clean up the flags
+    m_reportedPlaybackFailed = false;
+    m_reportedPlaybackEOS = false;
 
     if (!m_pipeline)
         createGSTPlayBin(url);
@@ -707,6 +719,10 @@ void MediaPlayerPrivateGStreamer::seekToTarget(const SeekTarget& inTarget)
         }
     } else {
         // We can seek now.
+        fprintf(stderr,"HTML5 video: Seeking from %s to %s seconds [%s]\n",
+                toString(currentTime()).utf8().data(), toString(target.time).utf8().data(),
+                m_url.string().utf8().data());
+
         if (!doSeek(target, player->rate())) {
             GST_DEBUG_OBJECT(pipeline(), "[Seek] seeking to %s failed", toString(target.time).utf8().data());
             return;
@@ -1089,6 +1105,19 @@ void MediaPlayerPrivateGStreamer::sourceSetupCallback(MediaPlayerPrivateGStreame
 MediaPlayerPrivateGStreamer::ChangePipelineStateResult MediaPlayerPrivateGStreamer::changePipelineState(GstState newState)
 {
     ASSERT(m_pipeline);
+
+    if(newState == GST_STATE_PLAYING) {
+        fprintf(stderr,"HTML5 video: Play [%s]\n", m_url.string().utf8().data());
+        if (playerIsSuspended()){
+            fprintf(stderr, "HTML5 video: suspended [%s]\n",m_url.string().utf8().data());
+        }
+        else if (!m_reportedPlaybackStarted) {
+            fprintf(stderr, "HTML5 video: Playback started [%s]\n",m_url.string().utf8().data());
+            m_reportedPlaybackStarted = true;
+        }
+    } else if(newState == GST_STATE_PAUSED) {
+        fprintf(stderr,"HTML5 video: Pause [%s]\n", m_url.string().utf8().data());
+    }
 
     if (playerIsSuspended()) {
         // Save requests to play until we resume.
@@ -2073,19 +2102,24 @@ void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
                 || g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED)
                 || g_error_matches(err.get(), GST_CORE_ERROR, GST_CORE_ERROR_MISSING_PLUGIN)
                 || g_error_matches(err.get(), GST_CORE_ERROR, GST_CORE_ERROR_PAD)
-                || g_error_matches(err.get(), GST_RESOURCE_ERROR, GST_RESOURCE_ERROR_NOT_FOUND))
+                || g_error_matches(err.get(), GST_RESOURCE_ERROR, GST_RESOURCE_ERROR_NOT_FOUND)) {
+                fprintf(stderr, "HTML5 video: Playback failed: Format error [%s]\n", m_url.string().utf8().data());
                 error = MediaPlayer::NetworkState::FormatError;
-            else if (g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_TYPE_NOT_FOUND)) {
+            } else if (g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_TYPE_NOT_FOUND)) {
+                fprintf(stderr, "HTML5 video: Playback failed: element not found error [%s]\n", m_url.string().utf8().data());
                 GST_ERROR_OBJECT(pipeline(), "Decode error, let the Media element emit a stalled event.");
                 m_loadingStalled = true;
                 error = MediaPlayer::NetworkState::DecodeError;
                 attemptNextLocation = true;
             } else if (err->domain == GST_STREAM_ERROR
                 || g_error_matches(err.get(), GST_STREAM_ERROR, GST_STREAM_ERROR_DECODE)) {
+                fprintf(stderr, "HTML5 video: Playback failed: Decode error [%s]\n",m_url.string().utf8().data());
                 error = MediaPlayer::NetworkState::DecodeError;
                 attemptNextLocation = true;
-            } else if (err->domain == GST_RESOURCE_ERROR)
+            } else if (err->domain == GST_RESOURCE_ERROR) {
+                fprintf(stderr, "HTML5 video: Playback failed: Network error [%s]\n",m_url.string().utf8().data());
                 error = MediaPlayer::NetworkState::NetworkError;
+        }
 
             if (attemptNextLocation)
                 issueError = !loadNextLocation();
@@ -3129,6 +3163,11 @@ void MediaPlayerPrivateGStreamer::didEnd()
     GST_INFO_OBJECT(pipeline(), "Playback ended, currentMediaTime = %s, duration = %s", now.toString().utf8().data(), duration().toString().utf8().data());
     m_isEndReached = true;
     RefPtr player = m_player.get();
+
+    if (!m_reportedPlaybackEOS && (!player || !player->isLooping())) {
+        fprintf(stderr, "HTML5 video: End of Stream [%s]\n", m_url.string().utf8().data());
+        m_reportedPlaybackEOS = true;
+    }
 
     if (!duration().isFinite()) {
         // From the HTMLMediaElement spec.

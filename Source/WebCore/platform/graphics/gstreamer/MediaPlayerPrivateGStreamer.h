@@ -410,6 +410,8 @@ protected:
     bool isPipelineWaitingPreroll(GstState current, GstState pending, GstStateChangeReturn) const;
     bool isPipelineWaitingPreroll() const;
 
+    const URL& url() const { return m_url; }
+
     void didEnd();
 
     Ref<MainThreadNotifier<MainThreadNotification>> m_notifier;
@@ -625,6 +627,10 @@ private:
     void invalidateCachedPositionOnNextIteration() const;
 
     void textureMapperPlatformLayerProxyWasInvalidated();
+
+    bool m_reportedPlaybackStarted { false };
+    bool m_reportedPlaybackFailed { false };
+    bool m_reportedPlaybackEOS { false };
 
     Atomic<bool> m_isPlayerShuttingDown;
     GRefPtr<GstElement> m_textSink;

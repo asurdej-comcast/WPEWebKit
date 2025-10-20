@@ -164,6 +164,9 @@
 
 namespace WebCore {
 
+// Implemented in GStreamerQuirkWesteros.cpp
+void noticeEnterKeyDownEvent();
+
 using namespace HTMLNames;
 
 #if ENABLE(DRAG_SUPPORT)
@@ -3749,6 +3752,9 @@ bool EventHandler::isKeyEventAllowedInFullScreen(const PlatformKeyboardEvent& ke
 
 bool EventHandler::keyEvent(const PlatformKeyboardEvent& keyEvent)
 {
+    if (keyEvent.type() == PlatformEvent::Type::KeyDown && keyEvent.keyIdentifier() == "Enter"_s)
+        noticeEnterKeyDownEvent();
+
     Ref frame = m_frame.get();
     RefPtr topDocument = frame->document() ? &frame->document()->topDocument() : nullptr;
     MonotonicTime savedLastHandledUserGestureTimestamp;
