@@ -87,6 +87,10 @@ if (USE_OPENXR)
 endif ()
 
 if (USE_ATSPI)
+    list(APPEND WebCore_LIBRARIES rdkatatspi2)
+endif ()
+
+if (USE_ATSPI)
     set(WebCore_AtspiInterfaceFiles
         ${WEBCORE_DIR}/accessibility/atspi/xml/Accessible.xml
         ${WEBCORE_DIR}/accessibility/atspi/xml/Action.xml

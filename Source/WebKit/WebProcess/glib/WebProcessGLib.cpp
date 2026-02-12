@@ -100,6 +100,10 @@
 #include <wtf/ASCIICType.h>
 #endif
 
+#if USE(ATSPI)
+#include <rdkat-atspi2.h>
+#endif
+
 #define RELEASE_LOG_SESSION_ID (m_sessionID ? m_sessionID->toUInt64() : 0)
 #define WEBPROCESS_RELEASE_LOG(channel, fmt, ...) RELEASE_LOG(channel, "%p - [sessionID=%" PRIu64 "] WebProcess::" fmt, this, RELEASE_LOG_SESSION_ID, ##__VA_ARGS__)
 #define WEBPROCESS_RELEASE_LOG_ERROR(channel, fmt, ...) RELEASE_LOG_ERROR(channel, "%p - [sessionID=%" PRIu64 "] WebProcess::" fmt, this, RELEASE_LOG_SESSION_ID, ##__VA_ARGS__)
@@ -235,7 +239,17 @@ void WebProcess::platformInitializeWebProcess(WebProcessCreationParameters& para
 #endif
 
 #if USE(ATSPI)
-    AccessibilityAtspi::singleton().connect(parameters.accessibilityBusAddress, parameters.accessibilityBusName);
+    // Enable RDKAT to process WebKit event into real speech (if TTS enabled)
+    WTFLogAlways("Enable RDKAT processing for WPE.");
+
+    WebCore::AXObjectCache::enableAccessibility();
+
+    const char * address = RDKAT_Initialize();
+
+    if (!parameters.accessibilityBusAddress.isEmpty())
+        WTFLogAlways("WARNING: Overriding accessibility bus address with address provided by RDKAT");
+
+    AccessibilityAtspi::singleton().connect(String::fromLatin1(address), parameters.accessibilityBusName);
 #endif
 
     if (parameters.disableFontHintingForTesting)
