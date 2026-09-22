@@ -7,6 +7,10 @@ elseif (USE_SKIA)
     include(platform/Skia.cmake)
 endif ()
 
+if (ENABLE_FIREBOLT)
+    include(platform/Firebolt.cmake)
+endif ()
+
 include(platform/GCrypt.cmake)
 include(platform/GStreamer.cmake)
 include(platform/ImageDecoders.cmake)

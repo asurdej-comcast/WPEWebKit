@@ -9,3 +9,4 @@ WEBKIT_OPTION_DEFINE(USE_GSTREAMER_FULL "Whether to enable support for static GS
 WEBKIT_OPTION_DEFINE(USE_GSTREAMER_TRANSCODER "Whether to enable support for GStreamer MediaRecorder backend" PUBLIC ON)
 WEBKIT_OPTION_DEFINE(USE_GSTREAMER_WEBRTC "Whether to enable support for WebRTC" PUBLIC ON)
 WEBKIT_OPTION_DEFINE(ENABLE_MEDIA_TELEMETRY "Whether to enable support for media telemetry" PRIVATE OFF)
+WEBKIT_OPTION_DEFINE(ENABLE_FIREBOLT "Whether to enable the Firebolt client (Device/Metrics over a libsoup WebSocket)" PRIVATE ON)
